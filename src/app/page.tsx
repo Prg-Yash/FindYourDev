@@ -1,18 +1,91 @@
 // import Image from "next/image";
 
-import { db } from "@/db";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Room } from "@/db/schema";
+import { GithubIcon, Search } from "lucide-react";
+import { get } from "http";
+import { getRooms } from "./data-access/rooms";
+import { TagsList } from "@/components/TagsList";
+import { SearchBar } from "./search-bar";
+import { splitTags } from "@/lib/utils";
 
-export default async function Home() {
-  const items= await db.query.testing.findMany();
+
+function RoomCard({room}:{room:Room}){
+  return(
+  <Card className="">
+  <CardHeader>
+    <CardTitle>{room.name}</CardTitle>
+
+    <CardDescription>{room.description}</CardDescription>
+  </CardHeader>
+  <CardContent className="flex flex-col gap-4">
+    <TagsList tags={splitTags(room.tags)}/>
+    {room.githubRepo && (
+      <Link href={room.githubRepo} className="flex items-center gap-2" target="_blank "
+      rel="noopener noreferrer"
+      >
+        <GithubIcon/>
+        Github Project
+        </Link>
+    )
+
+    }
+  </CardContent>
+  <CardFooter>
+   <Button asChild>
+     <Link href={`/rooms/${room.id}`}>
+       Join Room
+     </Link>
+    </Button>
+  </CardFooter>
+</Card>
+  )
+
+}
+export default async function Home({searchParams}:{
+  searchParams:{
+    search:string
+  }
+
+}) {
+
+  const rooms= await getRooms(searchParams.search);
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+    <main className="  min-h-screen p-12">
+      <div className="flex justify-between items-center mb-8 ">
+
+      <h1 className="text-4xl">Find Dev Rooms</h1>
+      
+      <Button asChild>
+        <Link href="/create-room">
+        Create Room
+      </Link>
+        
+        </Button>
+      </div>
+      <div className="mb-4">
+
+      <SearchBar/>
+      </div>
+      <div className="grid md:grid-cols-3 gap-4">
+
     {
-      items.map((item)=>{
-        return <div key={item.id}>
-          {item.name}
-        </div>
+      rooms.map((room)=>{
+        return <RoomCard key={room.id} room={room} />
+        
+        
       })
     }
+    </div>
     </main>
   );
 }

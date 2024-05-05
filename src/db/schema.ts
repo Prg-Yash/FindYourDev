@@ -1,4 +1,4 @@
-import {pgTable,text} from 'drizzle-orm/pg-core';
+import {pgTable,text, uuid} from 'drizzle-orm/pg-core';
 import {
   timestamp,
   primaryKey,
@@ -7,6 +7,7 @@ import {
 import postgres from "postgres"
 import { drizzle } from "drizzle-orm/postgres-js"
 import type { AdapterAccount } from "next-auth/adapters"
+import { sql } from 'drizzle-orm';
 
 export const testing = pgTable("testing", {
     id:text("id").notNull().primaryKey(),
@@ -49,13 +50,19 @@ export const accounts = pgTable(
   })
 )
  
-export const sessions = pgTable("session", {
-  sessionToken: text("sessionToken").primaryKey(),
+export const room = pgTable("room", {
+  id: uuid("id")
+    .default(sql`gen_random_uuid()`)
+    .notNull()
+    .primaryKey(),
   userId: text("userId")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  expires: timestamp("expires", { mode: "date" }).notNull(),
-})
+name: text("name").notNull(),
+  description: text("description"),
+  tags:text("tags").notNull(),
+  githubRepo: text("githubRepo"),
+  })
  
 export const verificationTokens = pgTable(
   "verificationToken",
@@ -68,3 +75,5 @@ export const verificationTokens = pgTable(
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
   })
 )
+
+export type Room=typeof room.$inferSelect;
