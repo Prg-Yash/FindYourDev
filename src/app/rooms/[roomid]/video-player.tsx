@@ -13,17 +13,17 @@ import {
   StreamVideoClient,
 } from "@stream-io/video-react-sdk";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { generateTokenAction } from "./actions";
 import { useRouter } from "next/navigation";
 
-
 const apiKey = process.env.NEXT_PUBLIC_GET_STREAM_API_KEY!;
-export function FindYourDevVP({ room }: { room: Room }) {
+
+export function DevFinderVideo({ room }: { room: Room }) {
   const session = useSession();
   const [client, setClient] = useState<StreamVideoClient | null>(null);
   const [call, setCall] = useState<Call | null>(null);
-const router=useRouter();
+  const router = useRouter();
   useEffect(() => {
     if (!room) return;
     if (!session.data) {
@@ -37,7 +37,7 @@ const router=useRouter();
         name: session.data.user.name ?? undefined,
         image: session.data.user.image ?? undefined,
       },
-     tokenProvider :()=>generateTokenAction(),
+      tokenProvider: () => generateTokenAction(),
     });
     const call = client.call("default", room.id);
     call.join({ create: true });
@@ -45,17 +45,29 @@ const router=useRouter();
     setCall(call);
 
     return () => {
-      call.leave().then(() => {
-      client.disconnectUser();
-      }
-      ).catch((e) => {
-        console.error(e);
-      });
-
-
+      call
+        .leave()
+        .then(() => client.disconnectUser())
+        .catch(console.error);
     };
   }, [session, room]);
+useEffect(() => {
 
+    return () => {
+
+      navigator.mediaDevices
+
+        .getUserMedia({ video: true, audio: true })
+
+        .then((stream) => {
+
+          stream.getTracks().forEach((track) => track.stop());
+
+        });
+
+    };
+
+  }, [call]);
   return (
     client &&
     call && (
@@ -63,8 +75,12 @@ const router=useRouter();
         <StreamTheme>
           <StreamCall call={call}>
             <SpeakerLayout />
-            <CallControls onLeave={()=>{router.push("/")}}/>
-             <CallParticipantsList onClose={()=>undefined}/>
+            <CallControls
+              onLeave={() => {
+                router.push("/");
+              }}
+            />
+            <CallParticipantsList onClose={() => undefined} />
           </StreamCall>
         </StreamTheme>
       </StreamVideo>
